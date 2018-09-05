@@ -15,17 +15,25 @@ public class ConnectionTest {
     public static void main(String[] args) {
 
         String cp = "af05f67a1abc911e8b1a802955924e35-1025783233.us-west-2.elb.amazonaws.com";
+        String role = "cassandra";
+        String pwd = "cassandra";
 
         try {
             if (args.length > 0) { // If any arguments provided
                 System.out.println(args[0]);
                 cp = args[0];
+                if (args.length > 2) {
+                	System.out.println(args[1]);
+                        role = args[1];
+			System.out.println(args[2]);
+                        pwd = args[2];
+                }
             } else {
                 System.out.println("No arguments provided - contact point from EKS cluster");
             }
             Cluster cluster = Cluster.builder()
                     .addContactPoint(cp)
-                    .withCredentials("cassandra", "asdf456$")
+                    .withCredentials(role, pwd)
                     //.withLoadBalancingPolicy(new RoundRobinPolicy())
                     .withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
                     .build();
