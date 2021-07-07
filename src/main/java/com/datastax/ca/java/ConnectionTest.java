@@ -3,6 +3,7 @@ package com.datastax.ca.java;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
+import com.datastax.driver.core.policies.RoundRobinPolicy;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -15,19 +16,34 @@ public class ConnectionTest {
     public static void main(String[] args) {
 
         String cp = "af05f67a1abc911e8b1a802955924e35-1025783233.us-west-2.elb.amazonaws.com";
+        String role = "cassandra";
+        String pwd = "cassandra";
+        int port = 9042;
 
         try {
             if (args.length > 0) { // If any arguments provided
                 System.out.println(args[0]);
                 cp = args[0];
+                if (args.length > 2) {
+                	System.out.println(args[1]);
+                        role = args[1];
+			System.out.println(args[2]);
+                        pwd = args[2];
+                }
+                if (args.length > 3) {
+                        System.out.println(args[3]);
+                        port = Integer.parseInt(args[3]);
+                }
+ 
             } else {
                 System.out.println("No arguments provided - contact point from EKS cluster");
             }
             Cluster cluster = Cluster.builder()
-                    .addContactPoint(cp)
-                    .withCredentials("cassandra", "asdf456$")
-                    //.withLoadBalancingPolicy(new RoundRobinPolicy())
-                    .withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
+                    .addContactPoint("35.232.40.227,104.155.137.79,35.226.26.250")
+                    .withCredentials(role, pwd)
+                    .withPort(port)
+               //     .withLoadBalancingPolicy(new TokenAwarePolicy(DCAwareRoundRobinPolicy.builder().build()))
+                    .withLoadBalancingPolicy(new RoundRobinPolicy())
                     .build();
             System.out.println("\n");
 
@@ -53,9 +69,11 @@ public class ConnectionTest {
 
             session.execute("DROP KEYSPACE IF EXISTS simplex");
 
-            session.execute("CREATE KEYSPACE IF NOT EXISTS simplex WITH replication " +
-                    "= {'class':'SimpleStrategy', 'replication_factor':3};");
+            //session.execute("CREATE KEYSPACE IF NOT EXISTS simplex WITH replication " +
+            //        "= {'class':'SimpleStrategy', 'replication_factor':3};");
 
+            session.execute("CREATE KEYSPACE IF NOT EXISTS simplex WITH replication " +
+                    "= {'class':'NetworkTopologyStrategy', 'DC-1':3};");
 
             session.execute(
                     "CREATE TABLE IF NOT EXISTS simplex.playlists (" +
